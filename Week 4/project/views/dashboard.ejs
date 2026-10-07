@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>Dashboard</title>
+</head>
+<body class="bg-gray-100 p-6">
+  <h1 class="text-2xl font-bold mb-4">Dashboard & Analytics</h1>
+  <div class="w-1/2 bg-white p-4 rounded shadow">
+    <canvas id="myChart"></canvas>
+  </div>
+
+  <script>
+    const ctx = document.getElementById('myChart');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Rock', 'Pop', 'Jazz'],
+        datasets: [{ label: 'Albums by Genre', data: [12, 19, 3], borderWidth: 1 }]
+      }
+    });
+  </script>
+</body>
+</html>

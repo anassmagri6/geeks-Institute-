@@ -1,0 +1,34 @@
+color.red {
+background-color: red;
+}
+.color.white {
+background-color: rgb(3, 25, 44); border: 1px solid #ccc;
+}
+.color.yellow{
+background-color: yellow;
+}
+.color.blue{
+background-color: rgb(87, 95, 8);
+}
+.color.pink{
+background-color: pink;
+}
+.color.green{
+background-color:rgb(189, 13, 205) ;
+}
+.color{
+width: 30px;
+height: 30px;
+display: inline-block;
+}
+
+#canvas {
+  display: grid;
+  grid-template-columns: repeat(20, 20px);
+}
+
+.square {
+  width: 20px;
+  height: 20px;
+  border: 1px solid #f0f0f0;
+}

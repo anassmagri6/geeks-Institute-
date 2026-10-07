@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emoji Guessing Game</title>
+</head>
+<body>
+    <h1>Emoji Guessing Game</h1>
+    <h2>Score: <span id="score">0</span></h2>
+
+    <div id="emoji-display" style="font-size: 80px;"></div>
+
+    <form id="guess-form">
+        <div id="options"></div>
+        <br>
+        <button type="submit">Submit Guess</button>
+    </form>
+
+    <p id="feedback"></p>
+
+    <script>
+        let currentEmoji = '';
+
+        async function loadQuestion() {
+            const res = await fetch('/api/game/next');
+            const data = await res.json();
+            currentEmoji = data.emoji;
+            document.getElementById('emoji-display').innerText = data.emoji;
+
+            const optionsDiv = document.getElementById('options');
+            optionsDiv.innerHTML = data.options.map(opt => 
+                `<label><input type="radio" name="option" value="${opt}" required> ${opt}</label><br>`
+            ).join('');
+        }
+
+        document.getElementById('guess-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const selected = document.querySelector('input[name="option"]:checked').value;
+
+            const res = await fetch('/api/game/guess', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ emoji: currentEmoji, guess: selected, player: 'Student' })
+            });
+
+            const result = await res.json();
+            document.getElementById('feedback').innerText = result.message;
+            document.getElementById('score').innerText = result.score;
+            loadQuestion();
+        });
+
+        loadQuestion();
+    </script>
+</body>
+</html>

@@ -1,0 +1,168 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background-color: #f8f9fa;
+    color: #212529;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 60px;
+    background-color: #ffffff;
+}
+
+header .u {
+    font-weight: bold;
+    font-size: 20px;
+}
+
+header nav a {
+    margin: 0 15px;
+    text-decoration: none;
+    color: #333;
+    transition: color 0.3s;
+}
+
+header nav a:hover,
+footer nav a:hover {
+    color: #d9534f;
+}
+
+.he {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 60px 80px;
+    background-color: #eef2f5;
+}
+
+.ro {
+    max-width: 480px;
+}
+
+.ro .l {
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 1.5px;
+    color: #6c757d;
+}
+
+.ro h1 {
+    font-size: 44px;
+    margin: 15px 0;
+}
+
+.ro p {
+    font-size: 16px;
+    color: #495057;
+    margin-bottom: 25px;
+}
+
+a[href="#ptr"] {
+    display: inline-block;
+    padding: 12px 24px;
+    background-color: #d9534f;
+    color: #ffffff;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: bold;
+}
+
+.gdst img {
+    width: 360px;
+    height: 360px;
+    object-fit: cover;
+}
+
+#ptr {
+    padding: 80px 60px;
+    text-align: center;
+}
+
+#ptr h2 {
+    font-size: 30px;
+    margin-bottom: 40px;
+}
+
+.gsfs {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+}
+
+.ewt {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    width: 280px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.ewt img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 6px;
+    margin-bottom: 15px;
+}
+
+.ewt > p {
+    font-size: 14px;
+    color: #6c757d;
+    margin: 10px 0 20px 0;
+}
+
+.ewt.ftr {
+    border: 2px solid #d9534f;
+}
+
+.gsfs .ewt:nth-child(2) {
+    background-color: #e9ecef;
+}
+
+.ewt .price {
+    font-weight: bold;
+    font-size: 18px;
+    margin-top: 5px;
+}
+
+.ewt button {
+    padding: 10px 20px;
+    background-color: #212529;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.ewt button:hover {
+    background-color: #d9534f;
+}
+
+footer {
+    padding: 40px 60px;
+    background-color: #ffffff;
+    text-align: center;
+    border-top: 1px solid #dee2e6;
+}
+
+footer p {
+    margin: 10px 0;
+    color: #6c757d;
+}
+
+footer nav a {
+    margin: 0 10px;
+    text-decoration: none;
+    color: #495057;
+}
