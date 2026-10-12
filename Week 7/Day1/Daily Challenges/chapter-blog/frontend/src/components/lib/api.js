@@ -14,14 +14,21 @@ export async function apiRequest(endpoint, options = {}) {
     return null;
   }
 
-  const data = await response.json();
+  const contentLength = response.headers.get("content-length");
+  const isJson = response.headers.get("content-type")?.includes("application/json");
+
+  let data = null;
+  if (contentLength !== "0" && isJson) {
+    data = await response.json();
+  }
 
   if (!response.ok) {
-    throw new Error(data.message || `Request failed (${response.status})`);
+    throw new Error(data?.message || `Request failed (${response.status})`);
   }
 
   return data;
 }
+
 export const loginUser = (credentials) =>
   apiRequest("/auth/login", {
     method: "POST",
