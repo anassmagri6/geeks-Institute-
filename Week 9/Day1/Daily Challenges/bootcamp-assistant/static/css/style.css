@@ -1,0 +1,105 @@
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: #0e44cc;
+  color: #1b1f2a;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  padding: 1rem 1.5rem;
+  background: #1f2b5c;
+  color: #fff;
+}
+header h1 { margin: 0 0 .25rem; font-size: 1.25rem; }
+header p { margin: 0; opacity: .85; font-size: .9rem; }
+
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  max-width: 780px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 1rem;
+  gap: .75rem;
+}
+
+.chat-panel {
+  flex: 1;
+  overflow-y: auto;
+  background: #6b0404;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  min-height: 300px;
+  max-height: 60vh;
+}
+
+.msg { margin-bottom: .75rem; display: flex; }
+.msg .bubble {
+  padding: .6rem .9rem;
+  border-radius: 12px;
+  max-width: 80%;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  line-height: 1.4;
+}
+.msg.user { justify-content: flex-end; }
+.msg.user .bubble { background: #2f6df6; color: #fff; border-bottom-right-radius: 4px; }
+.msg.assistant .bubble { background: #eef1f7; color: #1b1f2a; border-bottom-left-radius: 4px; }
+.msg .sources {
+  display: block;
+  font-size: .75rem;
+  margin-top: .35rem;
+  opacity: .7;
+}
+
+.input-row { display: flex; gap: .5rem; }
+.input-row input {
+  flex: 1;
+  padding: .7rem .9rem;
+  border: 1px solid #cfd6e4;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+.input-row input:focus {
+  outline: 2px solid #2f6df6;
+  outline-offset: 1px;
+}
+.input-row button {
+  padding: .7rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: #2f6df6;
+  color: #fff;
+  cursor: pointer;
+  font-size: .95rem;
+}
+.input-row button.secondary { background: #6b7280; }
+.input-row button:disabled { opacity: .5; cursor: not-allowed; }
+
+.error {
+  background: #fde8e8;
+  color: #8b1f1f;
+  border: 1px solid #f5b5b5;
+  padding: .6rem .9rem;
+  border-radius: 8px;
+  font-size: .9rem;
+}
+.loading { font-size: .85rem; opacity: .7; padding: 0 .25rem; }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0); border: 0;
+}
+
+@media (max-width: 600px) {
+  .input-row { flex-wrap: wrap; }
+  .input-row input { flex-basis: 100%; }
+  .input-row button { flex: 1; }
+}

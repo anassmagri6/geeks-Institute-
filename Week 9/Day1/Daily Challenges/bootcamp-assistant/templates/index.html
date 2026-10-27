@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Full-Stack Bootcamp Assistant</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+
+
+</head>
+<body>
+  <header>
+    <h1>AI Full-Stack Bootcamp</h1>
+    <p>Ask about the program, prerequisites, or register your interest.</p>
+  </header>
+
+  <main>
+    <div id="chat" class="chat-panel" role="log" aria-live="polite" aria-label="Conversation"></div>
+
+    <div id="error" class="error" role="alert" hidden></div>
+
+    <div id="loading" class="loading" hidden>Assistant is typing…</div>
+
+    <form id="chat-form" class="input-row">
+      <label for="user-input" class="sr-only">Your message</label>
+      <input
+        id="user-input"
+        type="text"
+        autocomplete="off"
+        placeholder="Type your message…"
+        required
+      />
+      <button type="submit" id="send-btn">Send</button>
+      <button type="button" id="new-btn" class="secondary">New conversation</button>
+    </form>
+  </main>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
