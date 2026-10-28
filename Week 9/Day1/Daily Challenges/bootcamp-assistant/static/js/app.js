@@ -1,93 +1,59 @@
-const chatEl = document.getElementById("chat");
-const form = document.getElementById("chat-form");
-const input = document.getElementById("user-input");
-const sendBtn = document.getElementById("send-btn");
-const newBtn = document.getElementById("new-btn");
-const errorEl = document.getElementById("error");
-const loadingEl = document.getElementById("loading");
+const chat   = document.getElementById('chat');
+const form   = document.getElementById('form');
+const input  = document.getElementById('msg');
+const send   = document.getElementById('send');
+const status = document.getElementById('status');
+const error  = document.getElementById('error');
 
-function addMessage(role, text, sources) {
-  const wrapper = document.createElement("div");
-  wrapper.className = `msg ${role}`;
-  const bubble = document.createElement("div");
-  bubble.className = "bubble";
-  bubble.textContent = text;
-
-  if (sources && sources.length) {
-    const s = document.createElement("span");
-    s.className = "sources";
-    s.textContent =
-      "Sources: " +
-      sources.map((x) => `[FAQ ${x.faq_id}] ${x.question || ""}`).join(" • ");
-    bubble.appendChild(s);
-  }
-
-  wrapper.appendChild(bubble);
-  chatEl.appendChild(wrapper);
-  chatEl.scrollTop = chatEl.scrollHeight;
+function addMsg(text, role) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.textContent = text;              // never innerHTML -> safe
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
 }
 
-function showError(msg) {
-  errorEl.textContent = msg;
-  errorEl.hidden = false;
-}
-function clearError() { errorEl.hidden = true; errorEl.textContent = ""; }
+addMsg("Hi! Ask about the bootcamp, or say “I want to register”.", "assistant");
 
-async function sendMessage(message) {
-  clearError();
-  addMessage("user", message);
-  loadingEl.hidden = false;
-  sendBtn.disabled = true;
-  input.disabled = true;
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const text = input.value.trim();
+  if (!text) return;
+
+  addMsg(text, 'user');
+  input.value = '';
+  send.disabled = true;
+  status.textContent = 'Thinking...';
+  error.hidden = true;
 
   try {
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message }),
+    const r = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text }),
     });
-    const data = await res.json();
-    if (!res.ok || !data.ok) {
-      showError(data.error || `Request failed (${res.status})`);
-    } else {
-      addMessage("assistant", data.answer || "", data.sources);
+    const data = await r.json();
+    if (!data.ok) throw new Error(data.error || 'request failed');
+
+    let answer = data.answer;
+    if (data.sources && data.sources.length) {
+      answer += '\n\nSources: ' +
+        data.sources.map(s => `[FAQ ${s.faq_id}] ${s.question}`).join(' · ');
     }
-  } catch (e) {
-    showError("Network error. Please try again.");
+    addMsg(answer, 'assistant');
+  } catch (err) {
+    error.hidden = false;
+    error.textContent = 'Error: ' + err.message;
   } finally {
-    loadingEl.hidden = true;
-    sendBtn.disabled = false;
-    input.disabled = false;
+    status.textContent = '';
+    send.disabled = false;
     input.focus();
   }
-}
-
-form.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const message = input.value.trim();
-  if (!message) return;
-  input.value = "";
-  sendMessage(message);
 });
 
-input.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault();
-    form.requestSubmit();
-  }
+document.getElementById('new').addEventListener('click', async () => {
+  await fetch('/api/new-session', { method: 'POST' });
+  chat.replaceChildren();
+  error.hidden = true;
+  addMsg("New conversation started. How can I help?", "assistant");
 });
-
-newBtn.addEventListener("click", async () => {
-  try {
-    await fetch("/api/new-session", { method: "POST" });
-  } catch (_) {}
-  chatEl.replaceChildren();
-  clearError();
-  addMessage("assistant", "New conversation started. How can I help?");
-  input.focus();
-});
-
-addMessage(
-  "assistant",
-  "Welcome to the AI Full-Stack Bootcamp! Ask me about the program, prerequisites, or type 'I want to register'."
-);

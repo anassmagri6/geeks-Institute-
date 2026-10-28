@@ -1,0 +1,9 @@
+flask
+flask-cors
+python-dotenv
+mongoengine
+openai
+pymupdf
+langchain-text-splitters
+qdrant-client>=1.10.0
+sentence-transformers

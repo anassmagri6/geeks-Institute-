@@ -1,103 +1,78 @@
-import csv
-import os
-import sys
-import uuid
-from dotenv import load_dotenv
+import os, uuid
+import dotenv
+import pandas as pd
+from datetime import datetime, timezone
 from openai import OpenAI
-from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, VectorParams, PointStruct
+from qdrant_client import QdrantClient, models
 
-load_dotenv()
+dotenv.load_dotenv()
+client_openai = OpenAI(
+    api_key=os.getenv("NVIDIA_API_KEY"),
+    base_url=os.getenv("BASE_URL"),
+    timeout=60.0, max_retries=2,
+)
+EMB  = os.getenv("EMBEDDING_MODEL")
+COLL = os.getenv("QDRANT_COLLECTION", "bootcamp_faqs")
 
-CSV_FILE = "bootcamp_faq.csv"
-
-QDRANT_PATH = os.getenv("QDRANT_PATH", "./qdrant_bootcamp_data")
-QDRANT_COLLECTION = os.getenv("QDRANT_COLLECTION", "bootcamp_faqs")
-EMBED_MODEL = os.getenv("EMBEDDING_MODEL")
-BASE_URL = os.getenv("BASE_URL")
-api_key = os.getenv("NVIDIA_API_KEY")
-
-if not api_key:
-    print("ERROR: NVIDIA_API_KEY is missing.")
-    sys.exit(1)
-
-
-client = OpenAI(api_key=api_key, base_url=BASE_URL, timeout=60.0, max_retries=2)
-
-def load_faqs():
-    rows = []
-    with open(CSV_FILE, mode="r", encoding="utf-8" , newline="") as f:
-        reader = csv.DictReader(f, delimiter=",")
-        required = {"question", "answer", "category"}
-        if not required.issubset({c.strip() for c in reader.fieldnames or []}):
-##issubset():The program asks: "Are all the columns I need (contained in the `required` variable) actually present among the file's columns?"
-             print("ERROR: CSV must contain question, answer, category columns.")
-             sys.exit(1)
-        for idx, row in enumerate(reader):##enumerate(reader)It provides you with both the item number and its content.
-         q = (row.get('question') or "").strip()
-         a = (row.get('answer') or "").strip()
-         c = (row.get('category') or "").strip()
-         if not q or not a or not c:
-             continue
-         rows.append({"faq_id": idx,
-                       "question": q,
-                         "answer": a, 
-                         "category": c})
-    return rows
-
-def embed_passages (texts):
-    resp = client.embeddings.create(
-        model =EMBED_MODEL,
-        input=[texts],
+def embed_passage(text: str) -> list[float]:
+    resp = client_openai.embeddings.create(
+        input=text, model=EMB,
         extra_body={"input_type": "passage", "truncate": "END"},
     )
+    if not resp.data or not resp.data[0].embedding:
+        raise RuntimeError("Embedding response was empty.")
     return resp.data[0].embedding
 
+# 1) read CSV with semicolon delimiter (pattern from rag.py)
+df = pd.read_csv("bootcamp_faq.csv", sep=";")
+for col in ("question", "answer", "category"):
+    if col not in df.columns:
+        raise SystemExit(f"Missing column: {col}")
+df = df.dropna(subset=["question", "answer", "category"])
+df = df.apply(lambda s: s.str.strip() if s.dtype == "object" else s)
+if (df[["question", "answer", "category"]] == "").any().any():
+    raise SystemExit("Empty required values found in CSV.")
 
-def main():
-    faqs = load_faqs()
-    if not faqs:
-        print("No valid FAQ rows found. Exiting.")
-        return
-    print(f"Loaded {len(faqs)} FAQ rows from {CSV_FILE}.")##Displays the number of questions loaded and the filename.
+# 2) prepare records (pattern from rag.py's prepare_records)
+def prepare_records(row):
+    content = f"Question: {row['question']}\nAnswer: {row['answer']}\n"
+    embedding = embed_passage(content)
+    return {
+        "id": int(row.name) + 1,          # stable ID from original order
+        "vector": embedding,
+        "payload": {
+            "faq_id":    int(row.name) + 1,
+            "question":  row["question"],
+            "answer":    row["answer"],
+            "category":  row["category"],
+            "source":    "bootcamp_faq.csv",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        },
+    }
 
-    documents = [f"question: {f['question']}\nA: {f['answer']}" for f in faqs]
+records = [prepare_records(r) for _, r in df.iterrows()]
+dim = len(records[0]["vector"])
+print("Vector size:", dim)
 
-    first_vector = embed_passages(documents[0])
-    dim = len(first_vector)
-    print(f"Embedding dimensions: {dim}")
+# 3) rebuild if dimensions changed (never mix models)
+qc = QdrantClient(path=os.getenv("QDRANT_PATH", "./qdrant_bootcamp_data"))
+if qc.collection_exists(COLL):
+    info = qc.get_collection(COLL)
+    if info.config.params.vectors.size != dim:
+        print("Dimension changed — recreating collection.")
+        qc.delete_collection(COLL)
 
-    qdrant = QdrantClient(path=QDRANT_PATH)##QdrantClient: A tool for interacting with the Qdrant database.
-    if qdrant.collection_exists(QDRANT_COLLECTION):##(collection exists): checks whether the collection exists.
-        existing = qdrant.get_collection(QDRANT_COLLECTION)##get_collection: retrieves collection information
-        existing_dim = existing.config.params.vectors.size
-    if existing_dim != dim:##Check whether the number of old dimensions differs from the new ones.
-            print(f"Vector size changed ({existing_dim} -> {dim}). Rebuilding collection.")
-            qdrant.delete_collection(QDRANT_COLLECTION)##Delete the existing group if the number of dimensions differs, in preparation for recreating it.
+if not qc.collection_exists(COLL):
+    qc.create_collection(
+        collection_name=COLL,
+        vectors_config=models.VectorParams(size=dim, distance=models.Distance.COSINE),
+    )
 
-    if not qdrant.collection_exists(QDRANT_COLLECTION):
-        qdrant.create_collection(
-            collection_name=QDRANT_COLLECTION,
-            vectors_config=VectorParams(size=dim, distance=Distance.COSINE),
-        )
-        print(f"Created Qdrant collection: {QDRANT_COLLECTION}")
-
-    points = []
-    for i, faq in enumerate(faqs):
-        vector = first_vector if i == 0 else embed_passages(documents[i])
-        point_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"faq-{faq['faq_id']}"))
-   
-    
-
-
-
-
-
-
-
-
-
-         
-        
-
-
+# 4) idempotent upsert (stable IDs replace on repeat)
+qc.upsert(
+    collection_name=COLL,
+    points=[models.PointStruct(id=r["id"], vector=r["vector"], payload=r["payload"]) for r in records],
+    wait=True,
+)
+print("Total points:", qc.count(COLL, exact=True).count)
+qc.close()

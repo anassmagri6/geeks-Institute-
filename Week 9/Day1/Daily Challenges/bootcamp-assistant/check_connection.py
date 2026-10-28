@@ -1,52 +1,34 @@
-import os
-import sys
-from dotenv import load_dotenv
+import os, dotenv
+dotenv.load_dotenv()
 from openai import OpenAI
-load_dotenv()
 
+key = os.getenv("NVIDIA_API_KEY")
+if not key:
+    raise SystemExit("ERROR: NVIDIA_API_KEY is missing in .env")
 
-api_key = os.getenv("NVIDIA_API_KEY")
-BASE_URL = os.getenv("BASE_URL")
-model = os.getenv("MODEL")
-embed_model = os.getenv("EMBEDDING_MODEL")
-
-
-if not api_key:
-    print("ERROR: NVIDIA_API_KEY is missing in .env")
-    sys.exit(1) ## exit the program
-
-
-
-client  = OpenAI(
-    api_key=api_key,
-    base_url= BASE_URL,
-    timeout=65.0,
-    max_retries=2,
+client = OpenAI(
+    api_key=key,
+    base_url=os.getenv("BASE_URL"),
+    timeout=30.0, max_retries=2,
 )
 
-chat = client.chat.completions.create(
-    model=model,
-    messages=[{"role": "user", "content": "Say hello in one short sentence."}],
-    max_tokens=50,
-    temperature=0.5,
-)
-print("Chat OK:", chat.choices[0].message.content)
+try:
+    r = client.chat.completions.create(
+        model=os.getenv("MODEL"),
+        messages=[{"role": "user", "content": "Say hello in one sentence."}],
+        temperature=0,
+    )
+    if not r.choices or r.choices[0].finish_reason != "stop":
+        raise RuntimeError("chat response incomplete")
+    print("Chat OK:", r.choices[0].message.content)
 
-  
-emb = client.embeddings.create(
-    model=model,
-    input=['This is a short test sentence for embedding."'],
-    extra_body={"input_type": "query", "truncate": "END"},
-)
-dims = len(emb.data[0].embedding)
-print("Embedding OK. Dimensions:", dims)
-
-
-
-
-
-
-
-
-
- 
+    e = client.embeddings.create(
+        model=os.getenv("EMBEDDING_MODEL"),
+        input=["Hello"],
+        extra_body={"input_type": "query", "truncate": "END"},
+    )
+    if not e.data or not e.data[0].embedding:
+        raise RuntimeError("empty embedding response")
+    print("Embedding dims:", len(e.data[0].embedding))
+except Exception as exc:
+    print("Connection error:", type(exc).__name__, str(exc)[:200])
